@@ -1,0 +1,368 @@
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+fieldset {
+  background-color: #191919;
+  border: 1px solid rgba(62, 62, 62, 0.6);
+  padding: 2rem;
+  border-radius: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.label {
+  color: #51eb0c;
+  font-weight: bold;
+}
+
+div.input__container:has(input[required]) label::before,
+div.input__container:has(textarea[required]) label::before {
+  content: "*";
+}
+
+.input__container .wrapper:not(:has(.custom-input)) {
+  background-color: #fff;
+  padding-inline: 1rem;
+  border-radius: 0.8rem;
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-items: center;
+  gap: 1rem;
+  box-sizing: border-box;
+}
+
+textarea {
+  resize: none;
+}
+
+.wrapper {
+  position: relative;
+}
+
+.wrapper:has(.is-valid)::after {
+  content: '\F633';
+  font-family: 'bootstrap-icons', sans-serif;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  font-size: 2rem;
+  color: #51eb0c;
+  /* background-image: url(../img/check.svg); */
+  transform: translate(-50%, -50%);
+}
+
+.wrapper:has(select.is-valid)::after {
+  right: 5%;
+}
+
+.wrapper:has(input[name*="senha"].is-valid)::after,
+.wrapper:has(input[name*="Senha"].is-valid)::after {
+  right: 7%;
+}
+
+.wrapper:has(textarea.is-valid)::after {
+  top: 90%;
+}
+
+.input__container .wrapper:has(input[type='checkbox']) {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  column-gap: 1rem;
+}
+
+.input__container .wrapper:has(input[type='checkbox']) input {
+  appearance: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  cursor: pointer;
+  transition: background-color 500ms ease;
+}
+
+.input__container .wrapper:has(input[type='checkbox']) input:checked {
+  background-color: #51eb0c;
+}
+
+.input__container .wrapper:has(input[type='checkbox']) label {
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+
+.wrapper.radio--buttons {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 520px;
+  border: 1px solid rgb(62, 62, 62, 0.6);
+  border-radius: 0.8rem;
+  padding: 0.5rem;
+  margin-top: 1rem;
+}
+
+.wrapper.radio--buttons div {
+  grid-row: 1;
+  display: grid;
+  transition: background-color 500ms ease;
+}
+
+.wrapper.radio--buttons div > * {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.wrapper.radio--buttons div label {
+  width: 100%;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  padding-block: 1.4rem;
+  box-sizing: border-box;
+  z-index: 2;
+  transition: color 1s ease;
+  cursor: pointer;
+}
+
+.wrapper.radio--buttons:has(input[type="radio"]:checked)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 30%;
+  height: 75%;
+  border-radius: 0.8rem;
+  background-color: #51eb0c;
+  transition: left 500ms ease;
+  transform: translateY(-50%);
+}
+
+.wrapper.radio--buttons:has(div:nth-child(1) input[type="radio"]:checked)::after {
+  left: 2%;
+}
+
+.wrapper.radio--buttons:has(div:nth-child(2) input[type="radio"]:checked)::after {
+  left: 35%;
+}
+
+.wrapper.radio--buttons:has(div:nth-child(3) input[type="radio"]:checked)::after {
+  width: 32%;
+  left: 66.5%;
+}
+
+.wrapper.radio--buttons div:has(input[type="radio"]:checked) label {
+  color: #000;
+  font-weight: bold;
+}
+
+input.input,
+textarea,
+select {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  color: #000;
+  width: 100%;
+  font-family: "Raleway", sans-serif;
+  padding-block: 1rem;
+}
+
+input[type="radio"] {
+  appearance: none;
+  margin: 0;
+}
+
+input[type="file"] {
+  height: 0;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #000;
+  font-family: "Raleway", sans-serif;
+}
+
+.btn--green {
+  padding: 1rem;
+  border-radius: 0.8rem;
+  color: rgba(0, 0, 0, 0.7);
+  background-color: #51eb0c;
+  text-align: center;
+  font-weight: bold;
+}
+
+.wrapper .btn--green {
+  width: 100%;
+  margin-top: 2rem;
+}
+
+.input-password--list {
+  position: absolute;
+  top: 125%;
+  left: 0;
+  background-color: #292929;
+  padding: 1rem;
+  border-radius: 0.8rem;
+  z-index: 2;
+}
+
+.input-password--list,
+.wrapper .input:valid ~ .input-password--list {
+    display: none;
+}
+
+.wrapper .input:focus ~ .input-password--list {
+  display: block;
+}
+
+.input__container:has(input[name*="senha"]:focus) .input__error-msg.is-visible {
+  display: none;
+}
+
+.input-password--list .requisito {
+  padding-left: 1rem;
+  position: relative;
+}
+
+.input-password--list .requisito:not(:last-child) {
+  margin-bottom: 1rem;
+}
+
+.input-password--list .requisito::before {
+  content: '';
+  position: relative;
+  left: -5%;
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  transition: border-color 500ms ease;
+}
+
+.input-password--list .requisito.valid::before {
+  background-color: #51eb0c;
+}
+
+.input-password--list .requisito.valid::after {
+  content: '\F633';
+  font-family: 'bootstrap-icons', sans-serif;
+  font-size: 1.2rem;
+  color: #fff;
+  position: absolute;
+  top: 5%;
+  left: 2%;
+  display: inline-block;
+}
+
+.list__files {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+
+.list__files li.file {
+  background-color: #292929;
+  border: 1px solid rgb(62, 62, 62, 0.6);
+  border-radius: 0.8rem;
+  display: flex;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  max-width: 520px;
+}
+
+.list__files li.file > img {
+  border: 1px solid rgb(62, 62, 62, 0.6);
+  padding: 1rem;
+  margin-right: 2rem;
+  border-radius: 0.8rem;
+}
+
+.list__files li.file > div span {
+  display: block;
+  font-size: 1.4rem;
+}
+
+.list__files li.file > div span.nomeArquivo {
+  color: #fff;
+  margin-bottom: 0.5rem;
+  max-width: 160px;
+  word-wrap: break-word;
+}
+
+.list__files li.file > div span.tamanhoArquivo {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.list__files li.file menu {
+  margin-left: auto;
+  display: flex;
+  gap: 2rem;
+}
+
+button.btn--green[form="form"],
+button.btn--green#btnSubmit {
+  max-width: 320px;
+  width: 100%;
+  margin-inline: 2rem;
+}
+
+span.input__error-msg {
+  position: relative;
+  top: 0;
+  color: #E52B50;
+  opacity: 0;
+  transition: opacity 300ms ease, top 250ms ease;
+}
+
+span.input__error-msg.is-visible {
+  opacity: 1;
+  top: 5%;
+}
+
+span.input__error-msg:not(.is-visible) {
+  top: -10%;
+  z-index: -1;
+  display: block;
+  height: 0;
+}
+
+@media screen and (min-width: 1024px) {
+  fieldset {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+
+  fieldset .input__container:has(.textarea),
+  fieldset > a,
+  fieldset > button,
+  .input__container:has(.wrapper.radio--buttons) {
+    grid-column: 1 / -1;
+  }
+
+  fieldset .input__container:has(.textarea) {
+    width: 100%;
+  }
+
+  fieldset .input__container {
+    min-width: 320px;
+    width: 100%;
+  }
+
+  fieldset > a {
+    max-width: 192px;
+  }
+
+  fieldset .btn--green {
+    width: 320px;
+  }
+
+  button.btn--green#btnSubmit {
+    margin-inline: 0;
+  }
+}
