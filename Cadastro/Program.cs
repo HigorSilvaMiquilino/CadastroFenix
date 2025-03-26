@@ -41,16 +41,21 @@ builder.Services.AddScoped<EnviarEmail>();
 builder.Services.AddScoped<IAuthServico, AuthServico>();
 builder.Services.AddScoped<AuthServico>();
 
-
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+    options.InstanceName = "FenixSystemsCadastro_";
+});
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",
         builder =>
         {
-            builder.AllowAnyOrigin()
+            builder.WithOrigins("https://localhost:7011/", "https://www.invertexto.com/")
                    .AllowAnyMethod()
-                   .AllowAnyHeader();
+                   .AllowAnyHeader()
+                   .AllowCredentials();
         });
 });
 

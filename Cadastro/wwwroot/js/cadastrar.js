@@ -60,9 +60,10 @@ const popupConfirmacao = new Popup({
                         let errorMessage = errorData.message || "Erro ao cadastrar usuário.";
 
                         if (errorData.errors && Object.keys(errorData.errors).length > 0) {
-                            errorMessage = "Por favor, corrija os seguintes erros:<br>";
+                            errorMessage = "Por favor, corrija os seguintes erros:<br><br>";
+                            errorMessage += '<ul style="list-style-type: none; padding: 0; margin: 0; text-align: left;">';
                             for (const [field, message] of Object.entries(errorData.errors)) {
-                                errorMessage += `${field}: ${message}<br>`;
+                                errorMessage += `<li style="margin-bottom: 0.5rem; line-height: 1.4;">• <strong style="color: #fff;">${field}:</strong> <strong style="color: 	#ff0000;">${message}:</strong></li>`;
                                 const inputField = form.querySelector(`#${field}`);
                                 if (inputField) {
                                     const errorSpan = inputField.closest(".input__container").querySelector(".input__error-msg");
@@ -70,6 +71,7 @@ const popupConfirmacao = new Popup({
                                     errorSpan.style.display = "block";
                                 }
                             }
+                            errorMessage += "</ul>";
                         }
 
                         throw new Error(errorMessage);

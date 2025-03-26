@@ -1,7 +1,11 @@
 ﻿using Cadastro.Data;
 using Cadastro.DTO;
+using Cadastro.Migrations;
 using Cadastro.Servicos.Utilidade;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Identity.Client;
+using System.Diagnostics.Metrics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -10,6 +14,7 @@ namespace Cadastro.Servicos.Cadastro
     public class CadastroServico : ICadastroServico
     {
         private readonly CadastroContexto _contexto;
+        private readonly ILogger<CadastroServico> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly string[] _generosValidos = { "Feminino", "Masculino", "Outro", "Prefiro não responder" };
         private readonly string[] _dddsValidos = {
@@ -24,28 +29,112 @@ namespace Cadastro.Servicos.Cadastro
             "91", "92", "93", "94", "95", "96", "97", "98", "99"
         };
 
-        public CadastroServico(CadastroContexto contexto, IHttpClientFactory httpClientFactory)
+
+        public CadastroServico(CadastroContexto contexto, IHttpClientFactory httpClientFactory, ILogger<CadastroServico> logger)
         {
             _contexto = contexto;
             _httpClientFactory = httpClientFactory;
+            _logger = logger;
         }
 
-        public bool ehCPFFuncionario(string cpf)
+        public async Task<bool> ehCPFFuncionario(string cpf, IDistributedCache cache)
         {
-            return !_contexto.Funcionarios.Any(f => f.CPF == cpf.Replace(".", "").Replace("-", ""));
+            cpf = cpf.Replace(".", "").Replace("-", "");
+            cpf = new string(cpf?.Where(char.IsDigit).ToArray()) ?? throw new ArgumentNullException(nameof(cpf));
+
+            var cacheKey = $"funcionario_unico_{cpf}";
+
+            try
+            {
+                var cachedResult = await cache.GetStringAsync(cacheKey);
+                if (cachedResult != null)
+                {
+                    _logger.LogInformation($"Cache hit for cpf: {cpf}");
+                    return bool.Parse(cachedResult);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to access Redis cache for key: {CacheKey}, falling back to database", cacheKey);
+            }
+
+            var existe = await _contexto.Funcionarios.AnyAsync(f => f.CPF == cpf);
+
+            await cache.SetStringAsync(cacheKey, (!existe).ToString(), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
+
+            _logger.LogInformation($"Cache miss for cpf: {cpf}, queried database");
+
+            return !existe;
         }
         
 
-        public bool ehCPFUnico(string cpf)
+        public async Task<bool> ehCPFUnico(string cpf, IDistributedCache cache)
         {
-            return !_contexto.Usuarios.Any(u => u.CPF == cpf.Replace(".", "").Replace("-", ""));
+            cpf = cpf.Replace(".", "").Replace("-", "");
+            cpf = new string(cpf?.Where(char.IsDigit).ToArray()) ?? throw new ArgumentNullException(nameof(cpf));
+
+
+            var cacheKey = $"cpf_unico_{cpf}";
+
+            try
+            {
+                var cachedResult = await cache.GetStringAsync(cacheKey);
+                if (cachedResult != null)
+                {
+                    _logger.LogInformation($"Cache hit for cpf: {cpf}");
+                    return bool.Parse(cachedResult);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to access Redis cache for key: {CacheKey}, falling back to database", cacheKey);
+            }
+
+            var exists = await _contexto.Usuarios.AnyAsync(u => u.CPF == cpf);
+
+            await cache.SetStringAsync(cacheKey, (!exists).ToString(), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
+
+            _logger.LogInformation($"Cache miss for CPF: {cpf}, queried database");
+            return !exists;
         }
 
-        public async Task<bool> ehCPFUnicoAsync(string cpf)
+        public async Task<bool> ehCPFUnicoAsync(string cpf, IDistributedCache cache)
         {
             if (string.IsNullOrWhiteSpace(cpf)) return false;
             cpf = cpf.Replace(".", "").Replace("-", "");
-            return !await _contexto.Usuarios.AnyAsync(u => u.CPF == cpf);
+            cpf = new string(cpf?.Where(char.IsDigit).ToArray()) ?? throw new ArgumentNullException(nameof(cpf));
+
+            var cacheKey = $"cpf_unico_{cpf}";
+
+            try
+            {
+                var cachedResult = await cache.GetStringAsync(cacheKey);
+                if (cachedResult != null)
+                {
+                    _logger.LogInformation($"Cache hit for cpf: {cpf}");
+                    return bool.Parse(cachedResult);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to access Redis cache for key: {CacheKey}, falling back to database", cacheKey);
+            }
+            
+            var exists = await _contexto.Usuarios.AnyAsync(u => u.CPF == cpf);
+
+            await cache.SetStringAsync(cacheKey, (!exists).ToString(), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
+
+            _logger.LogInformation($"Cache miss for CPF: {cpf}, queried database");
+            return !exists;
         }
 
         public bool ehCpfValido(string cpf)
@@ -119,16 +208,68 @@ namespace Cadastro.Servicos.Cadastro
             return numero.StartsWith("9") && numero.Length == 9;
         }
 
-        public bool ehTelefoneUnico(string telefone)
+        public async Task<bool> ehTelefoneUnico(string telefone, IDistributedCache cache)
         {
             telefone = telefone.Replace("(", "").Replace(")", "").Replace(" ", "").Replace("-", "");
-            return !_contexto.Usuarios.Any(u => u.Telefone == telefone);
+            telefone = new string(telefone?.Where(char.IsDigit).ToArray()) ?? throw new ArgumentNullException(nameof(telefone));
+
+            var cacheKey = $"telefone_unico_{telefone}";
+
+            try
+            {
+                var cachedResult = await cache.GetStringAsync(cacheKey);
+                if (cachedResult != null)
+                {
+                    _logger.LogInformation($"Cache hit for telefone: {telefone}");
+                    return bool.Parse(cachedResult);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to access Redis cache for key: {CacheKey}, falling back to database", cacheKey);
+            }
+
+            var exists = await _contexto.Usuarios.AnyAsync(u => u.Telefone == telefone);
+
+            await cache.SetStringAsync(cacheKey, (!exists).ToString(), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
+
+            _logger.LogInformation($"Cache miss for telefone: {telefone}, queried database");
+            return !exists;
         }
 
-        public async Task<bool> ehTelefoneUnicoAsync(string telefone)
+        public async Task<bool> ehTelefoneUnicoAsync(string telefone, IDistributedCache cache)
         {
             telefone = telefone.Replace("(", "").Replace(")", "").Replace(" ", "").Replace("-", "");
-            return !await _contexto.Usuarios.AnyAsync(u => u.Telefone == telefone);
+            telefone = new string(telefone?.Where(char.IsDigit).ToArray()) ?? throw new ArgumentNullException(nameof(telefone));
+
+            var cacheKey = $"telefone_unico_{telefone}";
+
+            try
+            {
+                var cachedResult = await cache.GetStringAsync(cacheKey);
+                if (cachedResult != null)
+                {
+                    _logger.LogInformation($"Cache hit for telefone: {telefone}");
+                    return bool.Parse(cachedResult);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to access Redis cache for key: {CacheKey}, falling back to database", cacheKey);
+            }
+
+            var exists = await _contexto.Usuarios.AnyAsync(u => u.Telefone == telefone);
+
+            await cache.SetStringAsync(cacheKey, (!exists).ToString(), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
+
+            _logger.LogInformation($"Cache miss for telefone: {telefone}, queried database");
+            return !exists;
         }
 
         public async Task<bool> ehCepValido(string cep, string estado, string cidade, string bairro, string logradouro) 
@@ -178,14 +319,68 @@ namespace Cadastro.Servicos.Cadastro
             return email.Equals(confirmacaoEmail);
         }
 
-        public bool ehEmailUnico(string email)
+        public async Task<bool> ehEmailUnico(string email, IDistributedCache cache)
         {
-            return !_contexto.Usuarios.Any(u => u.Email == email);
+            email = email?.ToLower() ?? throw new ArgumentNullException(nameof(email));
+
+            var cacheKey = $"email_unico_{email}";
+
+            try
+            {
+                var cachedResult = await cache.GetStringAsync(cacheKey);
+                if (cachedResult != null)
+                {
+                    _logger.LogInformation($"Cache hit for email: {email}");
+                    return bool.Parse(cachedResult);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to access Redis cache for key: {CacheKey}, falling back to database", cacheKey);
+            }
+
+            var exists = await _contexto.Usuarios.AnyAsync(u => u.Email == email);
+
+            await cache.SetStringAsync(cacheKey, (!exists).ToString(), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
+
+            _logger.LogInformation($"Cache miss for email: {email}, queried database");
+
+            return !exists;
         }
 
-        public async Task<bool> ehEmailUnicoAsync(string email)
+        public async Task<bool> ehEmailUnicoAsync(string email, IDistributedCache cache)
         {
-            return !await _contexto.Usuarios.AnyAsync(u => u.Email == email);
+            email = email?.ToLower() ?? throw new ArgumentNullException(nameof(email));
+
+            var cacheKey = $"email_unico_{email}";
+
+            try
+            {
+                var cachedResult = await cache.GetStringAsync(cacheKey);
+                if (cachedResult != null)
+                {
+                    _logger.LogInformation($"Cache hit for email: {email}");
+                    return bool.Parse(cachedResult);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to access Redis cache for key: {CacheKey}, falling back to database", cacheKey);
+            }
+
+            var exists = await _contexto.Usuarios.AnyAsync(u => u.Email == email);
+
+            await cache.SetStringAsync(cacheKey, (!exists).ToString(), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
+
+            _logger.LogInformation($"Cache miss for email: {email}, queried database");
+
+            return !exists;
         }
 
         public bool ehSenhaValida(string senha, string confirmacaoSenha)

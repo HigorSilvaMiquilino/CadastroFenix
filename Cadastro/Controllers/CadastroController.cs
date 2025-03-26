@@ -4,8 +4,10 @@ using Cadastro.Servicos.Auth;
 using Cadastro.Servicos.Cadastro;
 using Cadastro.Servicos.Email;
 using Cadastro.Servicos.Utilidade;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 
@@ -13,6 +15,7 @@ namespace Cadastro.Controllers
 {
     [Route("api/v1/[controller]")]
     [ApiController]
+    [EnableCors("AllowAllOrigins")]
     public class CadastroController : Controller
     {
         private readonly CadastroServico _cadastroServico;
@@ -21,6 +24,7 @@ namespace Cadastro.Controllers
         private readonly UtilServico _utilServico;
         private readonly EnviarEmail _enviarEmail;
         private readonly AuthServico _authServico;
+        private readonly IDistributedCache _cache;
 
 
         public CadastroController(
@@ -29,7 +33,8 @@ namespace Cadastro.Controllers
             CadastroContexto contexto,
             UtilServico utilServico,
             EnviarEmail enviarEmail,
-            AuthServico authServico)
+            AuthServico authServico,
+            IDistributedCache cache)
         {
             _cadastroServico = cadastroServico;
             _logger = logger;
@@ -37,6 +42,7 @@ namespace Cadastro.Controllers
             _utilServico = utilServico;
             _enviarEmail = enviarEmail;
             _authServico = authServico;
+            _cache = cache;
 
         }
 
@@ -64,12 +70,12 @@ namespace Cadastro.Controllers
                 ModelState.AddModelError("CPF", "CPF inválido");
             }
 
-            if (!_cadastroServico.ehCPFUnico(solicitacaoCadastro.CPF))
+            if (!await _cadastroServico.ehCPFUnico(solicitacaoCadastro.CPF, _cache))
             {
                 ModelState.AddModelError("CPF", "CPF já cadastrado");
             }
 
-            if (!_cadastroServico.ehCPFFuncionario(solicitacaoCadastro.CPF))
+            if (!await _cadastroServico.ehCPFFuncionario(solicitacaoCadastro.CPF, _cache))
             {
                 ModelState.AddModelError("CPF", "CPF já cadastrado como funcionário");
             }
@@ -94,7 +100,7 @@ namespace Cadastro.Controllers
                 ModelState.AddModelError("Telefone", "Telefone inválido");
             }
 
-            if (!_cadastroServico.ehTelefoneUnico(solicitacaoCadastro.Telefone))
+            if (!await _cadastroServico.ehTelefoneUnico(solicitacaoCadastro.Telefone, _cache))
             {
                 ModelState.AddModelError("Telefone", "Telefone já cadastrado");
             }
@@ -114,7 +120,7 @@ namespace Cadastro.Controllers
                 ModelState.AddModelError("Email", "Email inválido ou não corresponde à confirmação (ex: aa@a.aa, sem múltiplos @)");
             }
 
-            if (!_cadastroServico.ehEmailUnico(solicitacaoCadastro.Email))
+            if (!await _cadastroServico.ehEmailUnico(solicitacaoCadastro.Email, _cache))
             {
                 ModelState.AddModelError("Email", "Email já cadastrado");
             }
@@ -250,7 +256,9 @@ namespace Cadastro.Controllers
                 var baseUrl = $"{this.Request.Scheme}://{this.Request.Host}";
                 var imagemUrl = $"{baseUrl}/wwwroot/img/fenix.jpg";
 
-                /*
+
+
+                
                 try
                 {
                     await _enviarEmail.EnviarEmailslAsync(usuarioDto.Email, usuarioDto.NomeCompleto, "Cadastro realizado com sucesso", "Seja bem-vindo ao nosso sistema Fenix!", imagemUrl);
@@ -274,15 +282,28 @@ namespace Cadastro.Controllers
                     });
                     await _contexto.SaveChangesAsync();
                 }
-                */
+                
+
+                Response.Cookies.Append("BearerToken", token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTimeOffset.Now.AddHours(1),
+                    Path = "/api",
+                });
+                _logger.LogInformation("BearerToken cookie set for user: {Email}, CPF: {CPF}", usuarioCompleto.Email, usuarioCompleto.CPF);
+
+                await _cache.RemoveAsync($"email_unico_{usuarioCompleto.Email.ToLower()}");
+                await _cache.RemoveAsync($"cpf_unico_{new string(usuarioCompleto.CPF.Where(char.IsDigit).ToArray())}");
+                await _cache.RemoveAsync($"funcionario_unico_{new string(usuarioCompleto.CPF.Where(char.IsDigit).ToArray())}");
+                await _cache.RemoveAsync($"telefone_unico_{new string(usuarioCompleto.Telefone.Where(char.IsDigit).ToArray())}");
 
                 _logger.LogInformation("Usuário cadastrado com sucesso: {Email}, CPF: {CPF}, Tempo: {tempo}", usuarioCompleto.Email, usuarioCompleto.CPF, sw.ElapsedMilliseconds / 1000.0 + " segundos");
-
                 return CreatedAtAction(nameof(Cadastrar), new { id = usuario.Id }, new
                 {
                     success = true,
                     message = "Cadastro realizado com sucesso",
-                    bearerToken = token
                 });
 
             }
@@ -354,7 +375,7 @@ namespace Cadastro.Controllers
                     });
                 }
 
-                if (!_cadastroServico.ehCPFFuncionario(cpf))
+                if (!await _cadastroServico.ehCPFFuncionario(cpf, _cache))
                 {
                     return BadRequest(new
                     {
@@ -363,7 +384,7 @@ namespace Cadastro.Controllers
                     });
                 }
 
-                bool cpfUnico = await _cadastroServico.ehCPFUnicoAsync(cpf);
+                bool cpfUnico = await _cadastroServico.ehCPFUnicoAsync(cpf, _cache);
                 if (!cpfUnico)
                 {
                     return BadRequest(new
@@ -424,7 +445,7 @@ namespace Cadastro.Controllers
                         message = "Email inválido"
                     });
                 }
-                bool emailUnico = await _cadastroServico.ehEmailUnicoAsync(email);
+                bool emailUnico = await _cadastroServico.ehEmailUnicoAsync(email, _cache);
                 if (!emailUnico)
                 {
                     return BadRequest(new
@@ -433,6 +454,7 @@ namespace Cadastro.Controllers
                         message = "Email já está em uso"
                     });
                 }
+
                 return Ok(new
                 {
                     success = true,
@@ -484,7 +506,7 @@ namespace Cadastro.Controllers
                         message = "Telefone inválido"
                     });
                 }
-                bool telefoneUnico = await _cadastroServico.ehTelefoneUnicoAsync(telefone);
+                bool telefoneUnico = await _cadastroServico.ehTelefoneUnicoAsync(telefone, _cache);
                 if (!telefoneUnico)
                 {
                     return BadRequest(new
@@ -493,6 +515,7 @@ namespace Cadastro.Controllers
                         message = "Telefone já está em uso"
                     });
                 }
+
                 return Ok(new
                 {
                     success = true,
