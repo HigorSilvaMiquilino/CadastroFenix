@@ -4,11 +4,14 @@ using Cadastro.Servicos.Cadastro;
 using Cadastro.Servicos.Email;
 using Cadastro.Servicos.Utilidade;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics.Metrics;
 using System.Text;
+using System.Threading.RateLimiting;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +29,6 @@ builder.Services.AddDbContext<CadastroContexto>(options =>
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
-
-builder.Services.AddControllers();
 
 builder.Services.AddTransient<ICadastroServico, CadastroServico>();
 builder.Services.AddScoped<CadastroServico>();
@@ -85,6 +86,62 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+var meter = new Meter("FenixSystems.RateLimiting");
+var rateLimitExceededCounter = meter.CreateCounter<long>("rate_limit_exceeded_total", "count", "Total number of requests rejected due to rate limiting");
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddSlidingWindowLimiter("CadastrarSlidingLimiter", slidingOptions =>
+    {
+        slidingOptions.PermitLimit = 5;
+        slidingOptions.Window = TimeSpan.FromMinutes(1); 
+        slidingOptions.SegmentsPerWindow = 4; 
+        slidingOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        slidingOptions.QueueLimit = 0;
+    });
+
+    options.AddSlidingWindowLimiter("VerificationSlidingLimiter", slidingOptions =>
+    {
+        slidingOptions.PermitLimit = 10; 
+        slidingOptions.Window = TimeSpan.FromMinutes(1);
+        slidingOptions.SegmentsPerWindow = 2;
+        slidingOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        slidingOptions.QueueLimit = 0;
+    });
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+        var ipAddress = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var endpoint = context.HttpContext.Request.Path;
+        logger.LogWarning("Rate limit exceeded for IP: {IPAddress}, Endpoint: {Endpoint}, Policy: {PolicyName}",
+            ipAddress, endpoint, context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName);
+
+        rateLimitExceededCounter.Add(1, new KeyValuePair<string, object>("ip_address", ipAddress),
+                                     new KeyValuePair<string, object>("endpoint", endpoint.ToString()));
+
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+        var retryAfterSeconds = 60; 
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfterValue))
+        {
+            retryAfterSeconds = (int)retryAfterValue.TotalSeconds;
+        }
+
+        context.HttpContext.Response.Headers["Retry-After"] = retryAfterSeconds.ToString();
+
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            success = false,
+            message = $"Você fez muitas requisições. Por favor, aguarde {retryAfterSeconds} segundos antes de tentar novamente.",
+            retryAfter = retryAfterSeconds,
+            limit = context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName == "CadastrarSlidingLimiter" ? 5 : 10,
+            window = "1 minuto",
+        }, cancellationToken);
+    };
+});
+
+
 builder.Services.AddEndpointsApiExplorer();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -94,30 +151,32 @@ builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
-app.UseAuthentication();
-app.UseAuthorization();
+// Configure the HTTP request pipeline
+app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseDefaultFiles();
 
 app.UseRouting();
+
+app.UseCors("AllowAllOrigins");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.UseRateLimiter();
+
 app.UseAntiforgery();
+
 app.MapGet("/", async (HttpContext context) =>
 {
     context.Response.Redirect("/html/index.html");
 });
 
-app.UseCors("AllowAllOrigins"); 
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 

@@ -6,6 +6,7 @@ using Cadastro.Servicos.Email;
 using Cadastro.Servicos.Utilidade;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Diagnostics;
@@ -55,6 +56,7 @@ namespace Cadastro.Controllers
         /// <response code="429">Muitas requisições</response>
         /// <response code="500">Erro no servidor</response>
         [HttpPost("Cadastrar")]
+        [EnableRateLimiting("CadastrarSlidingLimiter")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -344,7 +346,6 @@ namespace Cadastro.Controllers
         /// <response code="400">CPF inválido</response>
         /// <response code="400">CPF já está em uso</response>
         /// <response code="400">Funcionários não podem se cadastrar</response>
-        ///         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
@@ -352,8 +353,10 @@ namespace Cadastro.Controllers
         [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpGet("verificar-cpf")]
+        [EnableRateLimiting("VerificationSlidingLimiter")]
         public async Task<IActionResult> VerificarCpf([FromQuery] string cpf)
         {
+
             if (string.IsNullOrWhiteSpace(cpf))
             {
                 return BadRequest(new
@@ -425,6 +428,7 @@ namespace Cadastro.Controllers
         [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpGet("verificar-email")]
+        [EnableRateLimiting("VerificationSlidingLimiter")]
         public async Task<IActionResult> VerificarEmail([FromQuery] string email, string confirmacao)
         {
             if (string.IsNullOrWhiteSpace(email))
@@ -486,6 +490,7 @@ namespace Cadastro.Controllers
         [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpGet("verificar-telefone")]
+        [EnableRateLimiting("VerificationSlidingLimiter")]
         public async Task<IActionResult> VerificarTelefone([FromQuery] string telefone)
         {
             if (string.IsNullOrWhiteSpace(telefone))
@@ -532,6 +537,22 @@ namespace Cadastro.Controllers
                 });
             }
         }
+
+
+        [HttpPost("test-sliding-limiter")]
+        [EnableRateLimiting("CadastrarSlidingLimiter")]
+        public IActionResult TestSlidingLimiter()
+        {
+            return StatusCode(StatusCodes.Status429TooManyRequests, new
+            {
+                success = false,
+                message = "Você fez muitas requisições. Por favor, aguarde 60 segundos antes de tentar novamente.",
+                retryAfter = 60,
+                limit = 5,
+                window = "1 minuto",
+            });
+        }
+
 
         [HttpGet("test-bad-request")]
         public IActionResult TestBadRequest()

@@ -26,6 +26,9 @@ namespace Cadastro.Data
             modelBuilder.Entity<Usuario>()
                 .HasIndex(Usuario => Usuario.Email)
                 .IsUnique();
+            modelBuilder.Entity<Usuario>()
+                .HasIndex(Usuario => Usuario.Telefone)
+                .IsUnique();
             modelBuilder.Entity<Endereco>()
                 .HasOne(Endereco => Endereco.Usuario)
                 .WithOne(Usuario => Usuario.Endereco)

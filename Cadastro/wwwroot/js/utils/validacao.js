@@ -1,6 +1,10 @@
 import { parseData, ehDataValida, ehMaiorDeIdade, ehDataFutura } from "./parsedata.js";
 import { getCEP } from "./getCep.js";
 import { getCidade, setCidade } from "./getCidade.js";
+import  Popup  from "../components/popup.js";
+
+const btnFinalizar = document.querySelector("#btnFinalizar");
+
 
 export function validacao(elemento) {
 
@@ -144,15 +148,48 @@ async function validaCPF(campo) {
         return campo.setCustomValidity("Insira um CPF válido.");
     }
 
-    console.log("Fazendo a requisição");
     let response = await fetch(`https://localhost:7011/api/v1/cadastro/verificar-cpf?cpf=${encodeURIComponent(cpf)}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
         }
     });
+    
+    if (response.status === 429) {
+        const errorData = await response.json();
+        let retryAfter = errorData.retryAfter || 60; 
+
+        const popupRateLimit = new Popup({
+            titulo: "Muitas Requisições!",
+            descricao: errorData.message || `Você fez muitas requisições. Por favor, aguarde ${retryAfter} segundos antes de tentar novamente.`,
+            status: "erro",
+            botoes: [{ label: "Entendi", classe: "btn--red"}]
+        });
+        document.body.querySelector("main").appendChild(popupRateLimit);
+        popupRateLimit.openPopup();
+
+
+        btnFinalizar.disabled = true;
+
+        const countdownInterval = setInterval(() => {
+            retryAfter -= 1;
+
+            if (retryAfter <= 0) {
+                clearInterval(countdownInterval);
+                btnFinalizar.disabled = false;
+                campo.setCustomValidity("");
+                popupRateLimit.closePopup();
+                return;
+            }
+
+            popupRateLimit.setDescricao(`Você fez muitas requisições. Por favor, aguarde ${retryAfter} segundos antes de tentar novamente.`);
+
+        }, 1000);
+
+        return;
+    }
+    
     let data = await response.json();
-    console.log(data);
     return data.success ? campo.setCustomValidity("") : campo.setCustomValidity(data.message);
 
     return campo.setCustomValidity("");
@@ -291,15 +328,48 @@ async function validaTelefone(campo) {
         return;
     }
 
-    console.log("Fazendo a requisição " + campo.value);
     let response = await fetch(`https://localhost:7011/api/v1/cadastro/verificar-telefone?telefone=${encodeURIComponent(campo.value)}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
         }
     });
+
+    if (response.status === 429) {
+        const errorData = await response.json();
+        let retryAfter = errorData.retryAfter || 60;
+
+        const popupRateLimit = new Popup({
+            titulo: "Muitas Requisições!",
+            descricao: errorData.message || `Você fez muitas requisições. Por favor, aguarde ${retryAfter} segundos antes de tentar novamente.`,
+            status: "erro",
+            botoes: [{ label: "Entendi", classe: "btn--red" }]
+        });
+        document.body.querySelector("main").appendChild(popupRateLimit);
+        popupRateLimit.openPopup();
+
+
+        btnFinalizar.disabled = true;
+
+        const countdownInterval = setInterval(() => {
+            retryAfter -= 1;
+
+            if (retryAfter <= 0) {
+                clearInterval(countdownInterval);
+                btnFinalizar.disabled = false;
+                campo.setCustomValidity("");
+                popupRateLimit.closePopup();
+                return;
+            }
+
+            popupRateLimit.setDescricao(`Você fez muitas requisições. Por favor, aguarde ${retryAfter} segundos antes de tentar novamente.`);
+
+        }, 1000);
+
+        return;
+    }
+
     let data = await response.json();
-    console.log(data);
     return data.success ? campo.setCustomValidity("") : campo.setCustomValidity(data.message);
 
     return campo.setCustomValidity("");
@@ -400,15 +470,47 @@ async function validaEmail(campo) {
         return campo.setCustomValidity("Insira um endereço de e-mail válido");
     }
 
-    console.log("Fazendo a requisição " + campo.value);
     let response = await fetch(`https://localhost:7011/api/v1/cadastro/verificar-email?email=${encodeURIComponent(campo.value)}&confirmacao=${encodeURIComponent(campo.value)}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
         }
     });
+
+    if (response.status === 429) {
+        const errorData = await response.json();
+        let retryAfter = errorData.retryAfter || 60;
+
+        const popupRateLimit = new Popup({
+            titulo: "Muitas Requisições!",
+            descricao: errorData.message || `Você fez muitas requisições. Por favor, aguarde ${retryAfter} segundos antes de tentar novamente.`,
+            status: "erro",
+            botoes: [{ label: "Entendi", classe: "btn--red"}]
+        });
+        document.body.querySelector("main").appendChild(popupRateLimit);
+        popupRateLimit.openPopup();
+
+        btnFinalizar.disabled = true;
+
+        const countdownInterval = setInterval(() => {
+            retryAfter -= 1; 
+
+            if (retryAfter <= 0) {
+                clearInterval(countdownInterval);
+                btnFinalizar.disabled = false;
+                campo.setCustomValidity(""); 
+                popupRateLimit.closePopup();
+                return;
+            }
+
+            popupRateLimit.setDescricao(`Você fez muitas requisições. Por favor, aguarde ${retryAfter} segundos antes de tentar novamente.`);
+
+        }, 1000); 
+
+        return;
+    }
+
     let data = await response.json();
-    console.log(data);
     return data.success ? campo.setCustomValidity("") : campo.setCustomValidity(data.message);
 
     return campo.setCustomValidity("");
@@ -585,3 +687,5 @@ function normalizarTexto(texto) {
         .toLowerCase()
         .replace(/['Â´`]/g, "");
 }
+
+

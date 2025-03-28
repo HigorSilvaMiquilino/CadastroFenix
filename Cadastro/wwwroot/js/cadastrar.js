@@ -1,5 +1,5 @@
 import { mascara } from "./utils/mascara.js";
-import { validacao } from "./utils/validacao.js";
+import { validacao} from "./utils/validacao.js";
 import { showHidePassword, handleRequirementsList } from "./components/password.js";
 import Popup from "./components/popup.js";
 const form = document.querySelector("#cadastro");
@@ -8,6 +8,7 @@ const campos = form.querySelectorAll("[required]");
 const fieldsets = document.querySelectorAll("fieldset");
 const btnVoltar = document.querySelector("#btnVoltar");
 const btnAvancar = document.querySelector("#btnAvancar");
+const btnFinalizar = document.querySelector("#btnFinalizar");
 
 btnVoltar.addEventListener("click", voltar);
 btnAvancar.addEventListener("click", avancar);
@@ -55,6 +56,25 @@ const popupConfirmacao = new Popup({
 
                     if (response.ok) {
                         window.location.assign("./sucesso-cadastro.html")
+                    } else if (response.status === 429) {
+                        const errorData = await response.json();
+                        const retryAfter = errorData.retryAfter || 60; 
+
+                        const popupRateLimit = new Popup({
+                            titulo: "Muitas Requisições!",
+                            descricao: errorData.message || `Você atingiu o limite de requisições. Tente novamente em ${retryAfter} segundos.`,
+                            status: "erro",
+                            botoes: [{ label: "Entendi", classe: "btn--red", onClick: () => popupRateLimit.closePopup() }]
+                        });
+                        document.body.querySelector("main").appendChild(popupRateLimit);
+                        popupRateLimit.openPopup();
+
+                        btnFinalizar.disabled = true;
+                        setTimeout(() => {
+                            btnFinalizar.disabled = false;
+                        }, retryAfter * 1000);
+
+                        return; 
                     } else {
                         const errorData = await response.json();
                         let errorMessage = errorData.message || "Erro ao cadastrar usuário.";
