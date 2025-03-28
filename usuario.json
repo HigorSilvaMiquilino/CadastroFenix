@@ -1,0 +1,38 @@
+[
+  {
+    "email": "user1@example.com",
+    "cpf": "12345678901",
+    "nomeCompleto": "User One",
+    "dataNascimento": "1990-01-01",
+    "genero": "Masculino",
+    "telefone": "11987654321",
+    "cep": "12345678",
+    "logradouro": "Rua Exemplo 1",
+    "numero": "100",
+    "bairro": "Centro",
+    "estado": "SP",
+    "cidade": "São Paulo",
+    "senha": "Senha@123",
+    "confirmacaoEmail": "user1@example.com",
+    "confirmacaoSenha": "Senha@123",
+    "aceiteTermos": true
+  },
+  {
+    "email": "user2@example.com",
+    "cpf": "98765432109",
+    "nomeCompleto": "User Two",
+    "dataNascimento": "1992-02-02",
+    "genero": "Feminino",
+    "telefone": "11987654322",
+    "cep": "87654321",
+    "logradouro": "Rua Exemplo 2",
+    "numero": "200",
+    "bairro": "Jardim",
+    "estado": "RJ",
+    "cidade": "Rio de Janeiro",
+    "senha": "Senha@123",
+    "confirmacaoEmail": "user2@example.com",
+    "confirmacaoSenha": "Senha@123",
+    "aceiteTermos": true
+  }
+]
