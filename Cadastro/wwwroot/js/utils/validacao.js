@@ -154,6 +154,7 @@ async function validaCPF(campo) {
             "Content-Type": "application/json"
         }
     });
+
     
     if (response.status === 429) {
         const errorData = await response.json();
@@ -190,7 +191,7 @@ async function validaCPF(campo) {
     }
     
     let data = await response.json();
-    return data.success ? campo.setCustomValidity("") : campo.setCustomValidity(data.message);
+    return data.Success ? campo.setCustomValidity("") : campo.setCustomValidity(data.Message);
 
     return campo.setCustomValidity("");
 }
@@ -370,7 +371,7 @@ async function validaTelefone(campo) {
     }
 
     let data = await response.json();
-    return data.success ? campo.setCustomValidity("") : campo.setCustomValidity(data.message);
+    return data.Success ? campo.setCustomValidity("") : campo.setCustomValidity(data.Message);
 
     return campo.setCustomValidity("");
 }
@@ -511,7 +512,7 @@ async function validaEmail(campo) {
     }
 
     let data = await response.json();
-    return data.success ? campo.setCustomValidity("") : campo.setCustomValidity(data.message);
+    return data.Success ? campo.setCustomValidity("") : campo.setCustomValidity(data.Message);
 
     return campo.setCustomValidity("");
 }

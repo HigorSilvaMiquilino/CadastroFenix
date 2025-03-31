@@ -48,7 +48,7 @@ namespace Cadastro.Controllers
         }
 
         /// <summary>
-        /// Registra um novo usuário com endereço.
+        /// Registra um novo usuário.
         /// </summary>
         /// <response code="201">Usuário cadastrado com sucesso</response>
         /// <response code="400">Dados inválidos</response>
@@ -57,11 +57,11 @@ namespace Cadastro.Controllers
         /// <response code="500">Erro no servidor</response>
         [HttpPost("Cadastrar")]
         [EnableRateLimiting("CadastrarSlidingLimiter")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ApiResponse))]
         public async Task<IActionResult> Cadastrar([FromBody] SolicitacaoCadastroModel solicitacaoCadastro)
         {
             Stopwatch sw = Stopwatch.StartNew();
@@ -163,12 +163,17 @@ namespace Cadastro.Controllers
                 });
                 await _contexto.SaveChangesAsync();
 
-                return BadRequest(new
+                LogBadRequest("Erro de validação", sw, errors);
+
+                return BadRequest(new ApiResponse
                 {
-                    success = false,
-                    message = "Erro de validação",
-                    errors
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = "Erro de validação",
+                    Errors = errors
                 });
+
+                
             }
 
             var endereco = new Endereco
@@ -302,10 +307,11 @@ namespace Cadastro.Controllers
                 await _cache.RemoveAsync($"telefone_unico_{new string(usuarioCompleto.Telefone.Where(char.IsDigit).ToArray())}");
 
                 _logger.LogInformation("Usuário cadastrado com sucesso: {Email}, CPF: {CPF}, Tempo: {tempo}", usuarioCompleto.Email, usuarioCompleto.CPF, sw.ElapsedMilliseconds / 1000.0 + " segundos");
-                return CreatedAtAction(nameof(Cadastrar), new { id = usuario.Id }, new
+                return StatusCode(StatusCodes.Status201Created, new ApiResponse
                 {
-                    success = true,
-                    message = "Cadastro realizado com sucesso",
+                    StatusCode = StatusCodes.Status201Created,
+                    Success = true,
+                    Message = "Cadastro realizado com sucesso"
                 });
 
             }
@@ -330,11 +336,12 @@ namespace Cadastro.Controllers
                 });
 
                 await _contexto.SaveChangesAsync();
-                return StatusCode(500, new
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
                 {
-                    success = false,
-                    message = "Erro no servidor",
-                    errors = new Dictionary<string, string>()
+                    StatusCode = StatusCodes.Status500InternalServerError,
+                    Success = false,
+                    Message = "Erro no servidor",
+                    Errors = new Dictionary<string, string>()
                 });
             }
         }
@@ -342,16 +349,17 @@ namespace Cadastro.Controllers
         /// <summary>
         /// Verifica se o CPF é válido, único e não pertence a um funcionário.
         /// </summary>
+        /// <param name="cpf">CPF a ser verificado</param>
         /// <response code="200">CPF disponível</response>
         /// <response code="400">CPF inválido</response>
         /// <response code="400">CPF já está em uso</response>
         /// <response code="400">Funcionários não podem se cadastrar</response>
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ApiResponse))]
         [HttpGet("verificar-cpf")]
         [EnableRateLimiting("VerificationSlidingLimiter")]
         public async Task<IActionResult> VerificarCpf([FromQuery] string cpf)
@@ -359,10 +367,11 @@ namespace Cadastro.Controllers
 
             if (string.IsNullOrWhiteSpace(cpf))
             {
-                return BadRequest(new
+                return BadRequest(new ApiResponse
                 {
-                    success = false,
-                    message = "CPF é obrigatório"
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = "CPF é obrigatório"
                 });
             }
 
@@ -371,45 +380,50 @@ namespace Cadastro.Controllers
 
                 if (!_cadastroServico.ehCpfValido(cpf))
                 {
-                    return BadRequest(new
+                    return BadRequest(new ApiResponse
                     {
-                        success = false,
-                        message = "CPF inválido"
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Success = false,
+                        Message = "CPF inválido"
                     });
                 }
 
                 if (!await _cadastroServico.ehCPFFuncionario(cpf, _cache))
                 {
-                    return BadRequest(new
+                    return BadRequest(new ApiResponse
                     {
-                        success = false,
-                        message = "Funcionários não podem se cadastrar"
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Success = false,
+                        Message = "Funcionários não podem se cadastrar"
                     });
                 }
 
                 bool cpfUnico = await _cadastroServico.ehCPFUnicoAsync(cpf, _cache);
                 if (!cpfUnico)
                 {
-                    return BadRequest(new
+                    return BadRequest(new ApiResponse
                     {
-                        success = false,
-                        message = "CPF já está em uso"
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Success = false,
+                        Message = "CPF já está em uso"
                     });
                 }
 
-                return Ok(new
+                return Ok(new ApiResponse
                 {
-                    success = true,
-                    message = "CPF disponível"
+                    StatusCode = StatusCodes.Status200OK,
+                    Success = true,
+                    Message = "CPF disponível"
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao verificar CPF: {CPF}", cpf);
-                return StatusCode(500, new
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
                 {
-                    success = false,
-                    message = "Erro no servidor ao verificar CPF"
+                    StatusCode = StatusCodes.Status500InternalServerError,
+                    Success = false,
+                    Message = "Erro no servidor ao verificar CPF"
                 });
             }
         }
@@ -417,61 +431,68 @@ namespace Cadastro.Controllers
         /// <summary>
         /// Verifica se o email é válido e único.
         /// </summary>
+        /// <param name="email">Email a ser verificado</param>
+        /// <param name="confirmacao">Confirmação do email</param>
         /// <response code="200">Email disponível</response>
         /// <response code="400">Email é obrigatório</response>
         /// <response code="400">Email inválido</response>
         /// <response code="400">Email já está em uso</response>
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ApiResponse))]
         [HttpGet("verificar-email")]
         [EnableRateLimiting("VerificationSlidingLimiter")]
         public async Task<IActionResult> VerificarEmail([FromQuery] string email, string confirmacao)
         {
             if (string.IsNullOrWhiteSpace(email))
             {
-                return BadRequest(new
+                return BadRequest(new ApiResponse
                 {
-                    success = false,
-                    message = "Email é obrigatório"
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = "Email é obrigatório"
                 });
             }
             try
             {
                 if (!_cadastroServico.ehEmailValido(email, confirmacao))
                 {
-                    return BadRequest(new
+                    return BadRequest(new ApiResponse
                     {
-                        success = false,
-                        message = "Email inválido"
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Success = false,
+                        Message = "Email inválido"
                     });
                 }
                 bool emailUnico = await _cadastroServico.ehEmailUnicoAsync(email, _cache);
                 if (!emailUnico)
                 {
-                    return BadRequest(new
+                    return BadRequest(new ApiResponse
                     {
-                        success = false,
-                        message = "Email já está em uso"
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Success = false,
+                        Message = "Email já está em uso"
                     });
                 }
 
-                return Ok(new
+                return Ok(new ApiResponse
                 {
-                    success = true,
-                    message = "Email disponível"
+                    StatusCode = StatusCodes.Status200OK,
+                    Success = true,
+                    Message = "Email disponível"
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao verificar Email: {Email}", email);
-                return StatusCode(500, new
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
                 {
-                    success = false,
-                    message = "Erro no servidor ao verificar Email"
+                    StatusCode = StatusCodes.Status500InternalServerError,
+                    Success = false,
+                    Message = "Erro no servidor ao verificar Email"
                 });
             }
         }
@@ -479,61 +500,67 @@ namespace Cadastro.Controllers
         /// <summary>
         /// Verifica se o telefone é válido e único.
         /// </summary>
+        /// <param name="telefone">Telefone a ser verificado</param>
         /// <response code="200">Telefone disponível</response>
         /// <response code="400">Telefone é obrigatório</response>
         /// <response code="400">Telefone inválido</response>
         /// <response code="400">Telefone já está em uso</response>
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests, Type = typeof(ApiResponse))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ApiResponse))]
         [HttpGet("verificar-telefone")]
         [EnableRateLimiting("VerificationSlidingLimiter")]
         public async Task<IActionResult> VerificarTelefone([FromQuery] string telefone)
         {
             if (string.IsNullOrWhiteSpace(telefone))
             {
-                return BadRequest(new
+                return BadRequest(new ApiResponse
                 {
-                    success = false,
-                    message = "Telefone é obrigatório"
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = "Telefone é obrigatório"
                 });
             }
             try
             {
                 if (!_cadastroServico.ehTelefoneValido(telefone))
                 {
-                    return BadRequest(new
+                    return BadRequest(new ApiResponse
                     {
-                        success = false,
-                        message = "Telefone inválido"
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Success = false,
+                        Message = "Telefone inválido"
                     });
                 }
                 bool telefoneUnico = await _cadastroServico.ehTelefoneUnicoAsync(telefone, _cache);
                 if (!telefoneUnico)
                 {
-                    return BadRequest(new
+                    return BadRequest(new ApiResponse
                     {
-                        success = false,
-                        message = "Telefone já está em uso"
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Success = false,
+                        Message = "Telefone já está em uso"
                     });
                 }
 
-                return Ok(new
+                return Ok(new ApiResponse
                 {
-                    success = true,
-                    message = "Telefone disponível"
+                    StatusCode = StatusCodes.Status200OK,
+                    Success = true,
+                    Message = "Telefone disponível"
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao verificar Telefone: {Telefone}", telefone);
-                return StatusCode(500, new
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
                 {
-                    success = false,
-                    message = "Erro no servidor ao verificar Telefone"
+                    StatusCode = StatusCodes.Status500InternalServerError,
+                    Success = false,
+                    Message = "Erro no servidor ao verificar Telefone"
                 });
             }
         }
@@ -570,15 +597,16 @@ namespace Cadastro.Controllers
             { "aceitetermos", "Você deve aceitar os termos para prosseguir" }
         };
 
-            return BadRequest(new
+            return BadRequest(new ApiResponse
             {
-                success = false,
-                message = "Erro de validação",
-                errors
+                StatusCode = StatusCodes.Status400BadRequest,
+                Success = false,
+                Message = "Erro de validação",
+                Errors = errors
             });
         }
 
-        private async Task<IActionResult> LogAndReturnBadRequest(string mensagemErro, Stopwatch sw, object errors)
+        private async void LogBadRequest(string mensagemErro, Stopwatch sw, object errors)
         {
             _logger.LogWarning("Erro: {MensagemErro}, {@Erros}", mensagemErro, errors);
             _contexto.LogsErro.Add(new LogErro
@@ -599,12 +627,6 @@ namespace Cadastro.Controllers
             });
 
             await _contexto.SaveChangesAsync();
-            return BadRequest(new
-            {
-                success = false,
-                message = "Erro de validação",
-                errors
-            });
         }
     }
 }

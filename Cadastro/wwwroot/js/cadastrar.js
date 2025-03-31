@@ -47,11 +47,11 @@ const popupConfirmacao = new Popup({
 
 
                     const response = await fetch("https://localhost:7011/api/v1/Cadastro/Cadastrar", {
-                        method: "POST",
+                        method: "Post",
                         headers: {
-                            "Content-Type": "application/json"
+                            "Content-Type": "application/json",
                         },
-                        body: JSON.stringify(formData)
+                        body: JSON.stringify(formData),
                     });
 
                     if (response.ok) {
@@ -77,17 +77,17 @@ const popupConfirmacao = new Popup({
                         return; 
                     } else {
                         const errorData = await response.json();
-                        let errorMessage = errorData.message || "Erro ao cadastrar usuário.";
+                        let errorMessage = errorData.Message || "Erro ao cadastrar usuário.";
 
-                        if (errorData.errors && Object.keys(errorData.errors).length > 0) {
+                        if (errorData.Errors && Object.keys(errorData.Errors).length > 0) {
                             errorMessage = "Por favor, corrija os seguintes erros:<br><br>";
                             errorMessage += '<ul style="list-style-type: none; padding: 0; margin: 0; text-align: left;">';
-                            for (const [field, message] of Object.entries(errorData.errors)) {
-                                errorMessage += `<li style="margin-bottom: 0.5rem; line-height: 1.4;">• <strong style="color: #fff;">${field}:</strong> <strong style="color: 	#ff0000;">${message}:</strong></li>`;
+                            for (const [field, Message] of Object.entries(errorData.Errors)) {
+                                errorMessage += `<li style="margin-bottom: 0.5rem; line-height: 1.4;">• <strong style="color: #fff;">${field}:</strong> <strong style="color: 	#ff0000;">${Message}:</strong></li>`;
                                 const inputField = form.querySelector(`#${field}`);
                                 if (inputField) {
                                     const errorSpan = inputField.closest(".input__container").querySelector(".input__error-msg");
-                                    errorSpan.textContent = message;
+                                    errorSpan.textContent = Message;
                                     errorSpan.style.display = "block";
                                 }
                             }
@@ -99,7 +99,7 @@ const popupConfirmacao = new Popup({
                 } catch (error) {
                     const popupErro = new Popup({
                         titulo: "Ocorreu algo inesperado.",
-                        descricao: error.message || "Parece que houve um erro com o seu cadastro, aguarde e tente novamente mais tarde.",
+                        descricao: error || "Parece que houve um erro com o seu cadastro, aguarde e tente novamente mais tarde.",
                         status: "erro",
                         botoes: [{ label: "Entendi", classe: "btn--red", onClick: () => popupErro.closePopup() }],
                     });
