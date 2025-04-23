@@ -1,10 +1,12 @@
 using Cadastro.Data;
 using Cadastro.Servicos.Auth;
 using Cadastro.Servicos.Cadastro;
+using Cadastro.Servicos.Cupom;
 using Cadastro.Servicos.Email;
 using Cadastro.Servicos.Utilidade;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -43,6 +45,9 @@ builder.Services.AddScoped<EnviarEmail>();
 
 builder.Services.AddScoped<IAuthServico, AuthServico>();
 builder.Services.AddScoped<AuthServico>();
+
+builder.Services.AddScoped<ICupomServico, CupomServico>();
+builder.Services.AddScoped<CupomServico>();
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
@@ -85,6 +90,23 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+            if (string.IsNullOrEmpty(authHeader))
+            {
+                var cookieHeader = context.Request.Cookies["BearerToken"];
+                if (!string.IsNullOrEmpty(cookieHeader))
+                {
+                    context.Token = cookieHeader;
+                }
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -178,6 +200,11 @@ builder.Services.AddSwaggerGen(c =>
     c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
 });
 
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -192,8 +219,10 @@ app.UseStaticFiles();
 app.UseDefaultFiles();
 
 app.UseRouting();
-
 app.UseCors("AllowAllOrigins");
+
+
+
 
 app.UseAuthentication();
 app.UseAuthorization();

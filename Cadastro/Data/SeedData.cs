@@ -18,5 +18,17 @@
                 new Funcionarios { Id = 10, CPF = "10919399002", NomeCompleto = "João Rocha", motivo = "Funcionário" }
             };
         }
+
+        public static List<Produto> GetProdutosSeed()
+        {
+            return new List<Produto>
+            {
+                new Produto { Id = 1, descricao = "KitKat" },
+                new Produto { Id = 2, descricao = "Nescafé" },
+                new Produto { Id = 3, descricao = "Maggi" },
+                new Produto { Id = 4, descricao = "Nespresso" },
+                new Produto { Id = 5, descricao  = "Smarties" }
+            };
+        }
     }
 }

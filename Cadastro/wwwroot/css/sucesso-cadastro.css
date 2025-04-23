@@ -1,0 +1,270 @@
+html {
+    font-size: 62.5%;
+  }
+  body {
+    background-color: black;
+  }
+  body,
+  button {
+    color: white;
+    font-family: "Raleway", sans-serif;
+    font-size: 1.6rem;
+  }
+  a {
+    text-decoration: none;
+    color: white;
+    display: block;
+  }
+  
+  button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding-block: 0;
+    padding-inline: 0;
+  }
+  
+  menu {
+    padding-block: 0;
+    padding-inline: 0;
+    margin-block: 0;
+  }
+  
+  li {
+    list-style: none;
+  }
+  
+  i {
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .btn--black,
+  .btn--green {
+    padding: 1rem;
+    border-radius: 0.8rem;
+    text-align: center;
+    font-weight: bold;
+    box-sizing: border-box;
+    display: inline-block;
+  }
+  
+  .btn--black {
+    background-color: #000;
+    color: #51eb0c;
+  }
+  
+  .btn--green {
+    color: rgba(0, 0, 0, 0.7);
+    background-color: #51eb0c;
+  }
+  
+  main {
+    display: grid;
+    max-width: 100vw;
+    max-height: max-content;
+  }
+  
+  /* main > * {
+      grid-row: 1;
+      grid-column: 1;
+    } */
+  
+  .section__fenix {
+    z-index: -1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-top: 10rem;
+  }
+  
+  .svgBox {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .svgBox svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 900px;
+    max-width: 100%;
+  }
+  
+  @keyframes scaleUp {
+    from {
+      scale: 0.8;
+    }
+    to {
+      scale: 1;
+    }
+  }
+  
+  .svgBox svg:nth-of-type(1) path {
+    filter: url(#filter);
+    stroke: #51eb0c;
+    stroke-width: 4px;
+    stroke-dasharray: 10811;
+    stroke-dashoffset: 10811;
+    animation: draw 2s linear forwards;
+  }
+  
+  @keyframes draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  
+  .section__fenix h1 {
+    font-size: 4rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    max-width: 600px;
+  }
+  
+  .section__fenix h1 span {
+    color: #51eb0c;
+  }
+  
+  .section__fenix h1,
+  .section__fenix p {
+    margin-inline: auto;
+  }
+  
+  .section__fenix p {
+    font-size: 2rem;
+    max-width: 650px;
+  }
+  
+  .section__fenix div a {
+    padding: 1rem;
+    border-radius: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    min-width: 200px;
+  }
+  
+  .section__fenix div a:nth-child(1) {
+    background-color: #51eb0c;
+    color: rgba(0, 0, 0, 0.7);
+    border: 1px solid transparent;
+    transition: all 250ms ease;
+  }
+  
+  .section__fenix div a:nth-child(2) {
+    background-color: #ffffff;
+    color: rgba(0, 0, 0, 1);
+    border: 1px solid transparent;
+    transition: all 250ms ease;
+  }
+  
+  .section__fenix div.link a:nth-child(1):hover {
+    border-color: #51eb0c;
+    transform: scale(1);
+    box-shadow: 0px 0px 10px 0px #51eb0c;
+  }
+  
+  .section__fenix div.link a:nth-child(2):hover {
+    border-color: #fff;
+    transform: scale(1);
+    box-shadow: 0px 0px 10px 0px #fff;
+  }
+  
+  .section__fenix img {
+    max-width: 600px;
+    width: 100%;
+  }
+  
+  .section__login-form {
+    background-color: rgba(25, 25, 25, 0.5);
+    backdrop-filter: blur(1rem);
+    text-align: center;
+    display: grid;
+    row-gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+    box-sizing: border-box;
+    border-left: 1px solid rgba(62, 62, 62, 0.6);
+    border-bottom: 1px solid rgba(62, 62, 62, 0.6);
+    border-radius: 10px;
+    margin-inline: auto;
+    margin-bottom: 10rem;
+    margin-top: 4rem;
+    height: fit-content;
+  }
+  
+  .section__login-form img.logo {
+    margin-inline: auto;
+    max-width: 320px;
+    width: 100%;
+  }
+  
+  .section__login-form h2 {
+    font-size: 3.2rem;
+    font-weight: bold;
+    color: #51eb0c;
+  }
+  
+  .section__login-form p.title--description {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  @media screen and (max-width: 1024px) {
+    .section__fenix {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      justify-content: center;
+      text-align: center;
+      padding-top: 4rem;
+      align-items: center;
+    }
+  
+    .section__fenix h2 {
+      font-size: 3rem;
+    }
+  
+    .section__fenix h2,
+    .section__fenix p {
+      padding-inline: 2rem;
+    }
+  
+    .section__fenix div.link {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  
+    .section__fenix div a {
+      max-width: 200px;
+      width: 100%;
+      text-align: center;
+    }
+  
+    .section__fenix img {
+      margin-inline: auto;
+      margin-bottom: 4rem;
+    }
+
+    .section__login-form {
+      max-width: 800px;
+    }
+  }
+  
+  @media screen and (min-width: 1024px) {
+    .section__fenix > svg {
+      margin-top: -8rem;
+    }
+
+    .section__login-form {
+      row-gap: 2rem;
+    }
+  
+    .section__login-form [class*="btn--"] {
+      max-width: 300px;
+      width: 100%;
+    }
+  }
+  

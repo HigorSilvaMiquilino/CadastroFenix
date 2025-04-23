@@ -22,6 +22,43 @@ namespace Cadastro.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Cadastro.Data.Cupom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CnpjEstabelecimento")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataCompra")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NumeroCupomFiscal")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ValorTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("quantidadeTotal")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Cupons");
+                });
+
             modelBuilder.Entity("Cadastro.Data.EmailLog", b =>
                 {
                     b.Property<int>("Id")
@@ -286,6 +323,135 @@ namespace Cadastro.Migrations
                     b.ToTable("LogsSucesso");
                 });
 
+            modelBuilder.Entity("Cadastro.Data.PasswordResetToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("PasswordResetTokens");
+                });
+
+            modelBuilder.Entity("Cadastro.Data.Produto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CupomId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("descricao")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("quantidade")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("valor")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CupomId");
+
+                    b.ToTable("Produtos");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            descricao = "KitKat",
+                            quantidade = 0,
+                            valor = 0m
+                        },
+                        new
+                        {
+                            Id = 2,
+                            descricao = "Nescafé",
+                            quantidade = 0,
+                            valor = 0m
+                        },
+                        new
+                        {
+                            Id = 3,
+                            descricao = "Maggi",
+                            quantidade = 0,
+                            valor = 0m
+                        },
+                        new
+                        {
+                            Id = 4,
+                            descricao = "Nespresso",
+                            quantidade = 0,
+                            valor = 0m
+                        },
+                        new
+                        {
+                            Id = 5,
+                            descricao = "Smarties",
+                            quantidade = 0,
+                            valor = 0m
+                        });
+                });
+
+            modelBuilder.Entity("Cadastro.Data.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Revoked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("Cadastro.Data.Usuario", b =>
                 {
                     b.Property<int>("Id")
@@ -324,10 +490,16 @@ namespace Cadastro.Migrations
                     b.Property<int>("EnderecoId")
                         .HasColumnType("int");
 
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("int");
+
                     b.Property<string>("Genero")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("LockoutEnd")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("NomeCompleto")
                         .IsRequired()
@@ -354,6 +526,9 @@ namespace Cadastro.Migrations
                         .IsUnique();
 
                     b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Telefone")
                         .IsUnique();
 
                     b.ToTable("Usuarios");
@@ -389,6 +564,40 @@ namespace Cadastro.Migrations
                         .IsRequired();
 
                     b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("Cadastro.Data.PasswordResetToken", b =>
+                {
+                    b.HasOne("Cadastro.Data.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("Cadastro.Data.Produto", b =>
+                {
+                    b.HasOne("Cadastro.Data.Cupom", null)
+                        .WithMany("Produtos")
+                        .HasForeignKey("CupomId");
+                });
+
+            modelBuilder.Entity("Cadastro.Data.RefreshToken", b =>
+                {
+                    b.HasOne("Cadastro.Data.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("Cadastro.Data.Cupom", b =>
+                {
+                    b.Navigation("Produtos");
                 });
 
             modelBuilder.Entity("Cadastro.Data.Usuario", b =>

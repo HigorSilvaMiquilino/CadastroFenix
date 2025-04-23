@@ -18,6 +18,14 @@ namespace Cadastro.Data
 
         public DbSet<EmailLog> EmailLogs { get; set; }
 
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
+        public DbSet<Produto> Produtos { get; set; }
+
+        public DbSet<Cupom> Cupons { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Usuario>()
@@ -38,9 +46,25 @@ namespace Cadastro.Data
             .HasOne(lp => lp.Usuario)
             .WithMany()
             .HasForeignKey(lp => lp.UsuarioId)
-            .OnDelete(DeleteBehavior.SetNull); 
+            .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Funcionarios>().HasData(SeedData.GetFuncionariosSeed());
+
+            modelBuilder.Entity<Produto>().HasData(SeedData.GetProdutosSeed());
+
+            modelBuilder.Entity<RefreshToken>()
+            .HasIndex(rt => rt.TokenHash)
+            .IsUnique();
+
+            modelBuilder.Entity<Cupom>(entity =>
+            {
+                entity.Property(e => e.ValorTotal).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<Produto>(entity =>
+            {
+                entity.Property(e => e.valor).HasPrecision(18, 2);
+            });
         }
     }
 }

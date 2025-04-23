@@ -85,5 +85,8 @@ namespace Cadastro.DTO
         /// Aceite dos termos de uso
         /// </summary>
         public bool AceiteTermos { get; set; }
+
+        [Required(ErrorMessage = "Token do CAPTCHA é obrigatório")]
+        public string CfTurnstileResponse { get; set; }
     }
 }

@@ -9,6 +9,6 @@
         public string Bairro { get; set; }
         public string Estado { get; set; }
         public string Cidade { get; set; }
-        public int UsuarioId { get; set; } // Apenas o ID, sem "Usuario"
+        public int UsuarioId { get; set; } 
     }
 }

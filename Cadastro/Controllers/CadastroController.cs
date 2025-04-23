@@ -1,5 +1,6 @@
 ﻿using Cadastro.Data;
 using Cadastro.DTO;
+using Cadastro.Migrations;
 using Cadastro.Servicos.Auth;
 using Cadastro.Servicos.Cadastro;
 using Cadastro.Servicos.Email;
@@ -10,7 +11,6 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 
 namespace Cadastro.Controllers
 {
@@ -52,7 +52,6 @@ namespace Cadastro.Controllers
         /// </summary>
         /// <response code="201">Usuário cadastrado com sucesso</response>
         /// <response code="400">Dados inválidos</response>
-        /// <response code="404">Dados não incontrado</response>
         /// <response code="429">Muitas requisições</response>
         /// <response code="500">Erro no servidor</response>
         [HttpPost("Cadastrar")]
@@ -70,6 +69,18 @@ namespace Cadastro.Controllers
             if (!_cadastroServico.ehCpfValido(solicitacaoCadastro.CPF))
             {
                 ModelState.AddModelError("CPF", "CPF inválido");
+            }
+
+            var ehValidoCaptcha = await _authServico.ValidarTurnstileToken(solicitacaoCadastro.CfTurnstileResponse);
+            if (!ehValidoCaptcha)
+            {
+                _logger.LogWarning("Falha na validação do CAPTCHA para o usuário: " + solicitacaoCadastro.Email);
+                return BadRequest(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = "Falha na validação do CAPTCHA"
+                });
             }
 
             if (!await _cadastroServico.ehCPFUnico(solicitacaoCadastro.CPF, _cache))
@@ -311,7 +322,12 @@ namespace Cadastro.Controllers
                 {
                     StatusCode = StatusCodes.Status201Created,
                     Success = true,
-                    Message = "Cadastro realizado com sucesso"
+                    Message = "Cadastro realizado com sucesso",
+                    Metadata = new Dictionary<string, Object>
+                    {
+                        { "nome" , usuarioCompleto.NomeCompleto }
+    
+                    }
                 });
 
             }

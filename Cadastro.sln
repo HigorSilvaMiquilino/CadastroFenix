@@ -5,17 +5,6 @@ VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cadastro", "Cadastro\Cadastro.csproj", "{A245FD3E-9275-4C2D-A2B8-A01486963907}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "load-tests", "load-tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		cadastrar-test.js = cadastrar-test.js
-		verificar-email-test.js = verificar-email-test.js
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-data", "test-data", "{BAEF2668-4B29-4869-BEAB-35C3961773F4}"
-	ProjectSection(SolutionItems) = preProject
-		usuario.json = usuario.json
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cadastro.Tests", "Cadastro.Tests\Cadastro.Tests.csproj", "{477FA147-29A5-41CF-947E-B7858FA85751}"
 EndProject
 Global
@@ -35,9 +24,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{BAEF2668-4B29-4869-BEAB-35C3961773F4} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {13E93044-B86A-4B27-A2D1-5D60E4183F1B}

@@ -1,13 +1,8 @@
 import { parseData, ehDataValida, ehMaiorDeIdade, ehDataFutura } from "./parsedata.js";
 import { getCEP } from "./getCep.js";
 import { getCidade, setCidade } from "./getCidade.js";
-import  Popup  from "../components/popup.js";
-
-const btnFinalizar = document.querySelector("#btnFinalizar");
-
 
 export function validacao(elemento) {
-
     let campo = elemento;
 
     if (elemento instanceof Event) {
@@ -83,7 +78,37 @@ export function validacao(elemento) {
             funcaoValidacao: validaConfirmacaoSenha,
             mensagensErro: {},
         },
-
+        cnpj: {
+            funcaoValidacao: validaCNPJ,
+            mensagensErro: {},
+        },
+        numeroCupom: {
+            funcaoValidacao: null,
+            mensagensErro: {},
+        },
+        dataCompra: {
+            funcaoValidacao: validaDataCompra,
+            mensagensErro: {},
+        },
+        produto: {
+            funcaoValidacao: null,
+            mensagensErro: {},
+        },
+        quantidade: {
+            funcaoValidacao: validaQuantidade,
+            mensagensErro: {},
+        },
+        valor: {
+            funcaoValidacao: validaValor,
+            mensagensErro: {},
+        },
+        quantidadeTotal: {
+            funcaoValidacao: validaQtdTotal,
+            mensagensErro: {
+                valueMissing: "Insira ao menos 1 produto participante.",
+            },
+            mostradorErro: document.querySelector("#erroQuantidadeTotal"),
+        },
     };
 
     if (valida[campo.name]) {
@@ -95,7 +120,6 @@ export function validacao(elemento) {
 
         return encontraErros(campo, valida[campo.name]);
     }
-
 }
 
 async function encontraErros(campo, obj) {
@@ -121,6 +145,7 @@ async function encontraErros(campo, obj) {
 }
 
 async function validaCPF(campo) {
+
     const cpf = campo.value.replace(/\.|-/g, "");
 
     const temNumerosRepetidos = (cpf) => {
@@ -155,16 +180,16 @@ async function validaCPF(campo) {
         }
     });
 
-    
+
     if (response.status === 429) {
         const errorData = await response.json();
-        let retryAfter = errorData.retryAfter || 60; 
+        let retryAfter = errorData.retryAfter || 60;
 
         const popupRateLimit = new Popup({
             titulo: "Muitas Requisições!",
             descricao: errorData.message || `Você fez muitas requisições. Por favor, aguarde ${retryAfter} segundos antes de tentar novamente.`,
             status: "erro",
-            botoes: [{ label: "Entendi", classe: "btn--red"}]
+            botoes: [{ label: "Entendi", classe: "btn--red" }]
         });
         document.body.querySelector("main").appendChild(popupRateLimit);
         popupRateLimit.openPopup();
@@ -189,7 +214,7 @@ async function validaCPF(campo) {
 
         return;
     }
-    
+
     let data = await response.json();
     return data.Success ? campo.setCustomValidity("") : campo.setCustomValidity(data.Message);
 
@@ -376,6 +401,7 @@ async function validaTelefone(campo) {
     return campo.setCustomValidity("");
 }
 
+
 function validaCelular(campo) {
     const match = campo.value.match(/^\(([1-9]\d)\)\s9\d{4}-\d{4}$/);
 
@@ -464,6 +490,7 @@ function validaCelular(campo) {
     return campo.setCustomValidity("");
 }
 
+
 async function validaEmail(campo) {
     const regex = /^(?:[\p{L}0-9]+(?:[-_\+\.][\p{L}0-9]){0,})+@[a-z0-9]{2,}\.[a-z0-9]{2,}(?:\.[a-z0-9]{1,}){0,}$/giu;
 
@@ -486,7 +513,7 @@ async function validaEmail(campo) {
             titulo: "Muitas Requisições!",
             descricao: errorData.message || `Você fez muitas requisições. Por favor, aguarde ${retryAfter} segundos antes de tentar novamente.`,
             status: "erro",
-            botoes: [{ label: "Entendi", classe: "btn--red"}]
+            botoes: [{ label: "Entendi", classe: "btn--red" }]
         });
         document.body.querySelector("main").appendChild(popupRateLimit);
         popupRateLimit.openPopup();
@@ -494,19 +521,19 @@ async function validaEmail(campo) {
         btnFinalizar.disabled = true;
 
         const countdownInterval = setInterval(() => {
-            retryAfter -= 1; 
+            retryAfter -= 1;
 
             if (retryAfter <= 0) {
                 clearInterval(countdownInterval);
                 btnFinalizar.disabled = false;
-                campo.setCustomValidity(""); 
+                campo.setCustomValidity("");
                 popupRateLimit.closePopup();
                 return;
             }
 
             popupRateLimit.setDescricao(`Você fez muitas requisições. Por favor, aguarde ${retryAfter} segundos antes de tentar novamente.`);
 
-        }, 1000); 
+        }, 1000);
 
         return;
     }
@@ -516,6 +543,7 @@ async function validaEmail(campo) {
 
     return campo.setCustomValidity("");
 }
+
 
 function validaConfirmacaoEmail(campo) {
     const inputEmail = document.querySelector("input#email");
@@ -683,10 +711,78 @@ function validaArquivo(campo) {
     return campo.setCustomValidity("");
 }
 
+function validaDataCompra(campo) {
+    const match = campo.value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+    if (match === null) {
+        campo.setCustomValidity("Insira uma data válida");
+        return;
+    }
+
+    const { dia, mes, ano, data } = parseData(match);
+
+    if (!ehDataValida(dia, mes, ano, data)) {
+        return campo.setCustomValidity("Insira uma data válida");
+    } else if (ano < 2025) {
+        return campo.setCustomValidity("Data fora do período de compras.");
+    } else if (ehDataFutura(dia, mes, ano)) {
+        return campo.setCustomValidity("Não é permitido inserir data futura.");
+    }
+
+    return campo.setCustomValidity("");
+}
+
+function validaQuantidade(campo) {
+    const valor = parseInt(campo.value);
+
+    if (valor === 0 || !valor) {
+        campo.setCustomValidity("É necessário ao menos 1 produto participante");
+        return;
+    }
+
+    campo.setCustomValidity("");
+}
+
+function validaQtdTotal(campo) {
+    let valor = parseInt(campo.value);
+
+    if (valor === 0 || !valor) {
+        campo.setCustomValidity("Insira ao menos 1 produto participante.");
+        return;
+    }
+
+    return campo.setCustomValidity("");
+}
+
+function validaValor(campo) {
+    let valor = parseFloat(campo.value);
+
+    if (valor === 0 || !valor) {
+        campo.setCustomValidity("Insira um valor válido");
+        return;
+    }
+
+    campo.setCustomValidity("");
+
+    if ((campo.value.length >= 1)) {
+        if (!campo.value.includes(",")) {
+            campo.value += ",00";
+            return;
+        }
+        if (campo.value.endsWith(",")) {
+            campo.value += "00";
+            return;
+        }
+        if (/\,\d$/.test(campo.value)) {
+            campo.value += "0";
+            return;
+        }
+    }
+
+}
+
 function normalizarTexto(texto) {
     return texto
         .toLowerCase()
         .replace(/['Â´`]/g, "");
 }
-
-

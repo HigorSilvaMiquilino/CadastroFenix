@@ -35,5 +35,8 @@ namespace Cadastro.Data
 
         [StringLength(23)] 
         public string? DataUpdate { get; set; }
+
+        public int FailedLoginAttempts { get; set; } = 0; 
+        public DateTime? LockoutEnd { get; set; } 
     }
 }
