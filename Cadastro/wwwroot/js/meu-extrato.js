@@ -1,3 +1,15 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetchWithAuth('https://localhost:7011/api/v1/Auth/check-auth');
+        if (!response.ok) {
+            window.location.assign('./login.html');
+        }
+    } catch (error) {
+        window.location.assign('./login.html');
+    }
+});
+
+
 async function refreshToken() {
     const response = await fetch("https://localhost:7011/api/v1/auth/refresh-token", {
         method: "POST",

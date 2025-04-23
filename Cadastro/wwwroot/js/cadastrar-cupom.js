@@ -7,6 +7,17 @@ const formDadosCupom = document.querySelector("#dadosCupom");
 const campos = document.querySelectorAll("[required]");
 const btnSubmit = document.querySelector("#btnSubmit");
 
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetchWithAuth('https://localhost:7011/api/v1/Auth/check-auth');
+        if (!response.ok) {
+            window.location.assign('./login.html');
+        }
+    } catch (error) {
+        window.location.assign('./login.html');
+    }
+});
+
 campos.forEach((campo) => {
     campo.addEventListener("blur", validacao);
     campo.addEventListener("input", mascara);

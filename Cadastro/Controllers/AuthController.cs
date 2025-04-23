@@ -3,6 +3,7 @@ using Cadastro.DTO;
 using Cadastro.Servicos.Auth;
 using Cadastro.Servicos.Cadastro;
 using Cadastro.Servicos.Email;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -553,6 +554,13 @@ namespace Cadastro.Controllers
                     }
                 });
             }
+        }
+
+        [HttpGet("check-auth")]
+        [Authorize]
+        public IActionResult CheckAuth()
+        {
+            return Ok(new ApiResponse { Success = true, Message = "Authenticated" });
         }
 
 
