@@ -11,9 +11,9 @@ namespace Cadastro.Servicos.Cupom
         Task<bool> EhLimiteCuponsPorUsuario(int usuarioId);
         Task<bool> EhNumeroCupomFiscalUnico(string numeroCupomFiscal);
         bool EhNumeroCupomFiscalValido(string numeroCupomFiscal);
-        bool EhQuantidadeMaximaProdutos(int quantidadeProdutos);
-        bool EhQuantidadeMinimaProdutos(int quantidadeProdutos);
-        bool EhValorValido(decimal valor);
+        bool EhQuantidadeMaximaProdutos(List<ProdutoDto> produto);
+        bool EhQuantidadeMinimaProdutos(List<ProdutoDto> produto);
+        bool EhValorValido(List<ProdutoDto> produto);
         DateTime FormatarData(string data);
         Task<List<Data.Cupom>> ObterCuponsPorUsuario(int usuarioId);
         Task<Data.Cupom> ObterUltimoCupomPorUsuario(int usuarioId);

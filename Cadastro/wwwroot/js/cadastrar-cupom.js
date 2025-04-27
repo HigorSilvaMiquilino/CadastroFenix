@@ -70,6 +70,7 @@ async function validaCampos(formulario) {
     return true;
 }
 
+
 let popupErro = null;
 function showError(txt = "Parece que houve um erro com a sua solicitação, aguarde e tente novamente mais tarde.") {
     if (popupErro == null) {
@@ -182,23 +183,7 @@ async function sendRequest() {
             credentials: "include"
         });
 
-        console.log("Response status:", response.status);
-        console.log("Response headers:", [...response.headers.entries()]);
-
-        const responseText = await response.text();
-        console.log("Response body (raw):", responseText);
-
         document.body.classList.remove("loading");
-
-        let errorData = null;
-        if (!response.ok) {
-            try {
-                errorData = responseText ? JSON.parse(responseText) : null;
-            } catch (jsonError) {
-                console.error("Failed to parse response as JSON:", jsonError);
-                throw new Error("Resposta do servidor inválida: não é um JSON válido.");
-            }
-        }
 
         if (response.ok) {
             window.location.assign("./cupom-cadastrado.html");
@@ -224,6 +209,7 @@ async function sendRequest() {
             return;
         } else {
             const errorData = await response.json();
+            console.log("Error data:", errorData);
             let errorMessage = errorData.Message || "Erro ao cadastrar usuário.";
 
             if (errorData.Errors && Object.keys(errorData.Errors).length > 0) {
@@ -231,7 +217,7 @@ async function sendRequest() {
                 errorMessage += '<ul style="list-style-type: none; padding: 0; margin: 0; text-align: left;">';
                 for (const [field, Message] of Object.entries(errorData.Errors)) {
                     errorMessage += `<li style="margin-bottom: 0.5rem; line-height: 1.4;">• <strong style="color: #fff;">${field}:</strong> <strong style="color: 	#ff0000;">${Message}:</strong></li>`;
-                    const inputField = form.querySelector(`#${field}`);
+                    const inputField = formDadosCupom.querySelector(`#${field}`);
                     if (inputField) {
                         const errorSpan = inputField.closest(".input__container").querySelector(".input__error-msg");
                         errorSpan.textContent = Message;

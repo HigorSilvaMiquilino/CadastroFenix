@@ -10,7 +10,7 @@ namespace Cadastro.Servicos.Cupom
     {
         private readonly CadastroContexto _contexto;
         private readonly ILogger<CadastroServico> _logger;
-        private const int MAX_CUPONS_POR_CLIENTE = 100;
+        private const int MAX_CUPONS_POR_CLIENTE = 2;
         private const int MAX_PRODUTOS_POR_CUPOM = 5;
 
         public CupomServico(CadastroContexto contexto, ILogger<CadastroServico> logger)
@@ -30,8 +30,14 @@ namespace Cadastro.Servicos.Cupom
             return false;
         }
 
-        public bool EhQuantidadeMaximaProdutos(int quantidadeProdutos)
+        public bool EhQuantidadeMaximaProdutos(List<ProdutoDto> produto)
         {
+            var quantidadeProdutos = 0;
+            foreach (var item in produto)
+            {
+                quantidadeProdutos += int.Parse(item.Quantidade.ToString());
+            }
+
             if (quantidadeProdutos > MAX_PRODUTOS_POR_CUPOM)
             {
                 return true;
@@ -39,8 +45,14 @@ namespace Cadastro.Servicos.Cupom
             return false;
         }
 
-        public bool EhQuantidadeMinimaProdutos(int quantidadeProdutos)
+        public bool EhQuantidadeMinimaProdutos(List<ProdutoDto> produto)
         {
+            var quantidadeProdutos = 0;
+            foreach (var item in produto)
+            {
+                quantidadeProdutos += int.Parse(item.Quantidade.ToString());
+            }
+
             if (quantidadeProdutos < 1)
             {
                 return true;
@@ -114,8 +126,15 @@ namespace Cadastro.Servicos.Cupom
             return true;
         }
 
-        public bool EhValorValido(decimal valor)
+        public bool EhValorValido(List<ProdutoDto> produto)
         {
+            var valor = 0m;
+            foreach (var item in produto)
+            {
+                valor += decimal.Parse(item.Valor.ToString());
+            }
+
+
             if (valor < 0)
             {
                 return false;
